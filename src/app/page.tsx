@@ -5,7 +5,7 @@ export default async function Home() {
   let saludoData = { message: 'No se pudo obtener el saludo del backend' };
 
   try {
-    const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}`, { cache: 'no-store' });
+    const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api`, { cache: 'no-store' });
     if (healthResponse.ok) {
       apiStatus = await healthResponse.json();
     }
