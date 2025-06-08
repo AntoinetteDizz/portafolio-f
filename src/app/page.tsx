@@ -5,7 +5,7 @@ export default async function Home() {
   let saludoData = { message: 'No se pudo obtener el saludo del backend' };
 
   try {
-    const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api`, { cache: 'no-store' });
+    const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}api`, { cache: 'no-store' });
     if (healthResponse.ok) {
       apiStatus = await healthResponse.json();
     }
@@ -14,7 +14,7 @@ export default async function Home() {
   }
 
   try {
-    const saludoResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/saludo`, { cache: 'no-store' });
+    const saludoResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}api/saludo`, { cache: 'no-store' });
     if (saludoResponse.ok) {
       saludoData = await saludoResponse.json();
     }
@@ -56,7 +56,7 @@ export default async function Home() {
           <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
             <span className="font-mono">Endpoint: </span>
             <span className="font-mono text-blue-600 dark:text-blue-400">
-              {process.env.NEXT_PUBLIC_API_URL}/api
+              {process.env.NEXT_PUBLIC_API_URL}api
             </span>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default async function Home() {
           <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
             <span className="font-mono">Endpoint: </span>
             <span className="font-mono text-blue-600 dark:text-blue-400">
-              {process.env.NEXT_PUBLIC_API_URL}/api/saludo
+              {process.env.NEXT_PUBLIC_API_URL}api/saludo
             </span>
           </div>
         </div>
