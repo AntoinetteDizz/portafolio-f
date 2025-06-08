@@ -66,7 +66,7 @@ export default async function Home() {
           <h3 className="font-medium text-gray-900 dark:text-white mb-3">Comunicación con Backend</h3>
           <div className="px-4 py-3 bg-white/70 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
             <p className="text-lg font-mono text-center text-blue-600 dark:text-blue-300">
-              "{saludoData.message}"
+              {saludoData.message}
             </p>
           </div>
           <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
