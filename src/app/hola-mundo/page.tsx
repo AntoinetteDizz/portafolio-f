@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function HolaMundoPage() {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-8">
@@ -16,12 +18,11 @@ export default function HolaMundoPage() {
           </p>
         </div>
 
-        <a 
-          href="/" 
-          className="mt-8 inline-block px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-        >
-          Volver al Home
-        </a>
+        <Link href="/" passHref>
+          <div className="mt-8 inline-block px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors cursor-pointer">
+            Volver al Home
+          </div>
+        </Link>
       </div>
     </main>
   );
