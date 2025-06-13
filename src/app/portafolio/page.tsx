@@ -281,8 +281,8 @@ export default function Home() {
                     </div>
                     </div>
                     <p className="mt-2 text-sm italic text-purple-600">
-                    "En cada línea de código veo estructura, en cada trazo digital veo expresión - 
-                    mi objetivo es unir ambos mundos"
+                    &quot;En cada línea de código veo estructura, en cada trazo digital veo expresión - 
+                    mi objetivo es unir ambos mundos&quot;
                     </p>
                 </div>
                 </div>
