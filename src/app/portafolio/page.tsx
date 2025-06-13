@@ -52,11 +52,6 @@ export default function Home() {
       src: "/musica/- tLDk2DueeMI.m4a"
     },
     {
-      title: "DueeMI",
-      artist: "DueeMI",
-      src: "/musica/- tLDk2DueeMI.m4a"
-    },
-    {
       title: "São Paulo feat. Anitta",
       artist: "The Weeknd",
       src: "/musica/The Weeknd - São Paulo feat. Anitta (Official Music Video).mp3"
