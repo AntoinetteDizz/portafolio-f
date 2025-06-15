@@ -359,8 +359,8 @@ export default function Home() {
                         </div>
                       </div>
                       <p className="mt-2 text-xs md:text-sm italic text-purple-600">
-                        "En cada línea de código veo estructura, en cada trazo digital veo expresión - 
-                        mi objetivo es unir ambos mundos"
+                        &ldquo;En cada línea de código veo estructura, en cada trazo digital veo expresión - 
+                        mi objetivo es unir ambos mundos&rdquo;
                       </p>
                     </div>
                   </div>
