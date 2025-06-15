@@ -11,6 +11,21 @@ export default function Home() {
   const [showPlayer, setShowPlayer] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Verificar si es móvil al cargar y en redimensiones
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
 
   const galeria = [
     "/ilustraciones/1.jpg",
@@ -61,8 +76,39 @@ export default function Home() {
   const [imagenSeleccionada, setImagenSeleccionada] = useState<string | null>(null);
   const currentSong = songs[currentSongIndex];
 
+  // Refs para los sonidos
+  const clickSoundRef = useRef<HTMLAudioElement | null>(null);
+  const navSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  // Función para reproducir sonido de click
+  const playClickSound = () => {
+    try {
+      if (clickSoundRef.current) {
+        clickSoundRef.current.currentTime = 0;
+        clickSoundRef.current.volume = 0.3;
+        clickSoundRef.current.play().catch(e => console.log("Error click:", e));
+      }
+    } catch (e) {
+      console.log("Error con clickSound:", e);
+    }
+  };
+
+  // Función para reproducir sonido de navegación
+  const playNavSound = () => {
+    try {
+      if (navSoundRef.current) {
+        navSoundRef.current.currentTime = 0;
+        navSoundRef.current.volume = 0.3;
+        navSoundRef.current.play().catch(e => console.log("Error nav:", e));
+      }
+    } catch (e) {
+      console.log("Error con navSound:", e);
+    }
+  };
+
   // Controlar reproducción
   const togglePlayPause = () => {
+    playClickSound();
     if (isPlaying) {
       audioRef.current?.pause();
     } else {
@@ -73,6 +119,7 @@ export default function Home() {
 
   // Cambiar canción
   const changeSong = (index: number) => {
+    playClickSound();
     setCurrentSongIndex(index);
     setIsPlaying(false);
     setProgress(0);
@@ -94,7 +141,7 @@ export default function Home() {
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newProgress = parseFloat(e.target.value);
     setProgress(newProgress);
-    if (audioRef.current) {
+    if (audioRef.current && audioRef.current.duration) {
       audioRef.current.currentTime = (newProgress / 100) * audioRef.current.duration;
     }
   };
@@ -105,235 +152,293 @@ export default function Home() {
     if (!audio) return;
 
     const updateProgress = () => {
-      setProgress((audio.currentTime / audio.duration) * 100 || 0);
+      if (audio.duration) {
+        setProgress((audio.currentTime / audio.duration) * 100 || 0);
+      }
     };
 
     audio.addEventListener('timeupdate', updateProgress);
-    return () => audio.removeEventListener('timeupdate', updateProgress);
-  }, []);
-
-  // Limpieza al desmontar
-  useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
+      if (audio) {
+        audio.removeEventListener('timeupdate', updateProgress);
       }
     };
   }, []);
 
+  // Precargar sonidos al montar
+  useEffect(() => {
+    if (clickSoundRef.current) clickSoundRef.current.load();
+    if (navSoundRef.current) navSoundRef.current.load();
+  }, []);
+
+  // Alternar menú en móvil
+  const [menuAbierto, setMenuAbierto] = useState(false);
+
   return (
     <div
-      className="min-h-screen bg-cover bg-center flex items-center justify-center p-4"
+      className="min-h-screen bg-cover bg-center flex items-center justify-center p-2 md:p-4"
       style={{ backgroundImage: "url('/941898.jpg')" }}
     >
-      {/* Elemento de audio oculto */}
+      {/* Elementos de audio */}
       <audio 
         ref={audioRef}
         src={currentSong.src}
         loop
         hidden
+        onError={(e) => console.error("Error cargando audio:", e.currentTarget.error)}
       />
+      <audio ref={clickSoundRef} src="/sonidos/Windows XP Start.wav" preload="auto" hidden />
+      <audio ref={navSoundRef} src="/sonidos/Windows XP Start.wav" preload="auto" hidden />
 
-      <div className="bg-white border border-gray-600 w-full max-w-[1000px] h-[600px] rounded-md shadow-xl flex flex-col">
+      <div className="bg-white border border-gray-600 w-full max-w-[1000px] h-[90vh] md:h-[600px] rounded-md shadow-xl flex flex-col mx-2">
         {/* Encabezado tipo ventana XP */}
-        <div className="bg-blue-800 text-white px-6 py-2 text-lg font-bold flex justify-between items-center">
+        <div className="bg-blue-800 text-white px-4 md:px-6 py-2 text-lg font-bold flex justify-between items-center">
           <span>Portafolio</span>
-          <button className="text-base border border-white px-3 py-1 rounded hover:bg-red-600">X</button>
+          <button 
+            onClick={() => playClickSound()}
+            className="text-base border border-white px-3 py-1 rounded hover:bg-red-600"
+          >
+            X
+          </button>
         </div>
 
         {/* Contenedor principal con scroll interno */}
-        <div className="flex flex-grow overflow-hidden">
-          {/* Barra lateral fija */}
-          <div className="bg-gray-200 border-r border-gray-400 w-[200px] py-6 px-3 space-y-4 text-lg font-bold">
+        <div className="flex flex-grow overflow-hidden flex-col md:flex-row">
+          {/* Botón de menú para móviles */}
+          {isMobile && (
+            <button
+              onClick={() => {
+                playNavSound();
+                setMenuAbierto(!menuAbierto);
+              }}
+              className="md:hidden bg-gray-200 border-b border-gray-400 p-2 flex items-center justify-center"
+            >
+              <Image 
+                src="/20.png" 
+                alt="Menú" 
+                width={24} 
+                height={24} 
+                className="mr-2"
+              />
+              <span className="font-semibold">Menú</span>
+            </button>
+          )}
+
+          {/* Barra lateral fija - Responsive */}
+          <div className={`${isMobile ? (menuAbierto ? "block" : "hidden") : "block"} bg-gray-200 border-r border-gray-400 w-full md:w-[200px] py-4 md:py-6 px-2 md:px-3 space-y-2 md:space-y-4 text-base md:text-lg font-bold`}>
             {[
               { id: "presentacion", label: "Presentación", icon: "/323.png" },
               { id: "tecnologias", label: "Tecnologías", icon: "/139_1.png" },
-              { id: "proyectos", label: "Proyectos", icon: "/20.png" },
+              { id: "proyectos", label: "Proyectos", icon: "/1081.png" },
               { id: "recursos", label: "Recursos", icon: "/1016_1.png" },
               { id: "ilustraciones", label: "Ilustraciones", icon: "/899.png" },
-              { id: "contacto", label: "Contacto", icon: "/1081.png" },
+              { id: "contacto", label: "Contacto", icon: "/1010.png" },
             ].map(({ id, label, icon }) => (
               <button
                 key={id}
-                onClick={() => setSeccion(id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded border transition-colors
+                onClick={() => {
+                  playNavSound();
+                  setSeccion(id);
+                  if (isMobile) setMenuAbierto(false);
+                }}
+                className={`w-full flex items-center gap-2 md:gap-3 px-2 md:px-3 py-1 md:py-2 rounded border transition-colors text-sm md:text-base
                   ${
                     seccion === id
                       ? "bg-[#217498] text-white border-gray-600 shadow-inner"
                       : "bg-gray-100 text-black border-gray-300 hover:bg-white"
                   }`}
               >
-                <Image src={icon} alt={label} width={32} height={32} />
+                <Image src={icon} alt={label} width={isMobile ? 24 : 32} height={isMobile ? 24 : 32} />
                 <span>{label}</span>
               </button>
             ))}
           </div>
 
           {/* Área de contenido con scroll */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 text-base bg-white">
+          <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-6 text-sm md:text-base bg-white">
             {seccion === "presentacion" && (
-            <div className="border border-gray-400 rounded-md bg-gradient-to-br from-white to-[#f0f8ff] shadow-[inset_0_0_3px_#ccc] p-6 space-y-6">
-            
-            {/* Título superior con icono tipo XP */}
-            <div className="flex justify-center w-full mb-4">
-                <h2 className="text-blue-900 text-2xl font-bold">¡BIENVENIDO A MI PORTAFOLIO!</h2>
-            </div>
-
-            <div className="flex flex-col items-center">
-            {/* Avatar con marco estilo XP - Versión con blue-900 */}
-            <div className="p-1 bg-gradient-to-br from-blue-900 to-[#3b82f6] border-[3px] border-white shadow-xl mb-3">
-            <Image 
-                src="/avatar-1.png" 
-                alt="Perfil" 
-                width={250}
-                height={250}
-                className="border-2 border-blue-100 shadow-md"
-            />
-            </div>
-            
-            {/* Información personal con emojis */}
-            <div className="bg-blue-900 text-white px-6 py-2 rounded-md shadow-md text-center">
-                <p className="font-bold text-lg">Soy Antonietta Palazzo / Aelnolegustas</p>
-                <div className="flex justify-center gap-3 text-sm mt-1 items-center">
-                <span>🎂 23 años</span>
-                <span className="text-blue-200">|</span>
-                <span>📚 Estudiante de Informática</span>
-                <span className="text-blue-200">|</span>
-                <span>🌴 Venezuela</span>
+              <div className="border border-gray-400 rounded-md bg-gradient-to-br from-white to-[#f0f8ff] shadow-[inset_0_0_3px_#ccc] p-4 md:p-6 space-y-4 md:space-y-6">
+                {/* Título superior */}
+                <div className="flex justify-center w-full mb-3 md:mb-4">
+                  <h2 className="text-blue-900 text-xl md:text-2xl font-bold">¡BIENVENIDO A MI PORTAFOLIO!</h2>
                 </div>
-            </div>
-            </div>
 
-            <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="flex flex-col items-center">
+                  {/* Avatar con marco estilo XP */}
+                  <div className="p-1 bg-gradient-to-br from-blue-900 to-[#3b82f6] border-[3px] border-white shadow-xl mb-3">
+                    <Image 
+                      src="/avatar-1.png" 
+                      alt="Perfil" 
+                      width={isMobile ? 150 : 250}
+                      height={isMobile ? 150 : 250}
+                      className="border-2 border-blue-100 shadow-md"
+                    />
+                  </div>
+                  
+                  {/* Información personal con emojis */}
+                  <div className="bg-blue-900 text-white px-4 md:px-6 py-2 rounded-md shadow-md text-center w-full">
+                    <p className="font-bold text-base md:text-lg">Soy Antonietta Palazzo / Aelnolegustas</p>
+                    <div className="flex flex-col md:flex-row justify-center gap-1 md:gap-3 text-xs md:text-sm mt-1 items-center">
+                      <span>🎂 23 años</span>
+                      <span className="hidden md:inline text-blue-200">|</span>
+                      <span>📚 Estudiante de Informática</span>
+                      <span className="hidden md:inline text-blue-200">|</span>
+                      <span>🌴 Venezuela</span>
+                    </div>
+                  </div>
+                </div>
 
-                {/* Panel de texto estilo tarjeta */}
-                <div className="flex-1 bg-white border border-gray-300 rounded-lg p-4 shadow-md space-y-3">
-                <h3 className="text-xl font-bold text-blue-800 border-b pb-2">Desarrolladora en Formación</h3>
-                
-                <p className="text-gray-800">
-                    Como futura ingeniera informática, me especializo en el desarrollo de software robusto 
-                    y eficiente, con experiencia práctica en múltiples lenguajes de programación y frameworks.
-                    Combino mis habilidades técnicas con mi pasión por el arte digital para crear interfaces 
-                    intuitivas y visualmente atractivas.
-                </p>
-                
-                <div className="bg-yellow-50 p-3 rounded border border-yellow-100">
-                    <h4 className="font-semibold text-yellow-700 mb-1">Enfoque Técnico-Creativo</h4>
-                    <p className="text-sm">
+                <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+                  {/* Panel de texto estilo tarjeta */}
+                  <div className="flex-1 bg-white border border-gray-300 rounded-lg p-3 md:p-4 shadow-md space-y-2 md:space-y-3">
+                    <h3 className="text-lg md:text-xl font-bold text-blue-800 border-b pb-2">Desarrolladora en Formación</h3>
+                    
+                    <p className="text-gray-800 text-sm md:text-base">
+                      Como futura ingeniera informática, me especializo en el desarrollo de software robusto 
+                      y eficiente, con experiencia práctica en múltiples lenguajes de programación y frameworks.
+                      Combino mis habilidades técnicas con mi pasión por el arte digital para crear interfaces 
+                      intuitivas y visualmente atractivas.
+                    </p>
+                    
+                    <div className="bg-yellow-50 p-2 md:p-3 rounded border border-yellow-100">
+                      <h4 className="font-semibold text-yellow-700 text-sm md:text-base mb-1">Enfoque Técnico-Creativo</h4>
+                      <p className="text-xs md:text-sm">
                         Mi metodología combina las mejores prácticas de ingeniería de software con 
                         un enfoque creativo para resolver problemas complejos. Dominio de estructuras 
                         de datos, algoritmos y patrones de diseño, complementado con:
-                    </p>
-                    <ul className="mt-2 text-sm space-y-1">
-                    <li className="flex items-start gap-2">
-                        <span className="text-yellow-600">•</span>
-                        <span>Sensibilidad artística para el diseño de interfaces</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                        <span className="text-yellow-600">•</span>
-                        <span>Habilidad para crear ilustraciones y gráficos personalizados</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                        <span className="text-yellow-600">•</span>
-                        <span>Enfoque estético en el desarrollo frontend</span>
-                    </li>
-                    </ul>
-                </div>
+                      </p>
+                      <ul className="mt-2 text-xs md:text-sm space-y-1">
+                        <li className="flex items-start gap-2">
+                          <span className="text-yellow-600">•</span>
+                          <span>Sensibilidad artística para el diseño de interfaces</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-yellow-600">•</span>
+                          <span>Habilidad para crear ilustraciones y gráficos personalizados</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-yellow-600">•</span>
+                          <span>Enfoque estético en el desarrollo frontend</span>
+                        </li>
+                      </ul>
+                    </div>
 
-                <div className="bg-purple-50 p-3 rounded border border-purple-100 mt-3">
-                    <h4 className="font-semibold text-purple-700 mb-1">Dos Pasiones, Un Propósito</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div>
-                        <p className="font-medium text-purple-800 flex items-center gap-1">
-                        <Image src="/139_1.png" alt="Tecnología" width={16} height={16} />
-                        Tecnología:
-                        </p>
-                        <ul className="space-y-1 mt-1">
-                        <li className="flex items-center gap-1">
-                            <span className="text-blue-600">▲</span> Programación avanzada
-                        </li>
-                        <li className="flex items-center gap-1">
-                            <span className="text-blue-600">▲</span> Desarrollo web
-                        </li>
-                        <li className="flex items-center gap-1">
-                            <span className="text-blue-600">▲</span> Bases de datos
-                        </li>
-                        </ul>
+                    <div className="bg-purple-50 p-2 md:p-3 rounded border border-purple-100 mt-2 md:mt-3">
+                      <h4 className="font-semibold text-purple-700 text-sm md:text-base mb-1">Dos Pasiones, Un Propósito</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 text-xs md:text-sm">
+                        <div>
+                          <p className="font-medium text-purple-800 flex items-center gap-1">
+                            <Image src="/139_1.png" alt="Tecnología" width={isMobile ? 12 : 16} height={isMobile ? 12 : 16} />
+                            Tecnología:
+                          </p>
+                          <ul className="space-y-1 mt-1">
+                            <li className="flex items-center gap-1">
+                              <span className="text-blue-600">▲</span> Programación avanzada
+                            </li>
+                            <li className="flex items-center gap-1">
+                              <span className="text-blue-600">▲</span> Desarrollo web
+                            </li>
+                            <li className="flex items-center gap-1">
+                              <span className="text-blue-600">▲</span> Bases de datos
+                            </li>
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="font-medium text-purple-800 flex items-center gap-1">
+                            <Image src="/899.png" alt="Arte" width={isMobile ? 12 : 16} height={isMobile ? 12 : 16} />
+                            Arte Digital:
+                          </p>
+                          <ul className="space-y-1 mt-1">
+                            <li className="flex items-center gap-1">
+                              <span className="text-pink-600">◉</span> Ilustración profesional
+                            </li>
+                            <li className="flex items-center gap-1">
+                              <span className="text-pink-600">◉</span> Diseño gráfico
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-xs md:text-sm italic text-purple-600">
+                        "En cada línea de código veo estructura, en cada trazo digital veo expresión - 
+                        mi objetivo es unir ambos mundos"
+                      </p>
                     </div>
-                    <div>
-                        <p className="font-medium text-purple-800 flex items-center gap-1">
-                        <Image src="/899.png" alt="Arte" width={16} height={16} />
-                        Arte Digital:
-                        </p>
-                        <ul className="space-y-1 mt-1">
-                        <li className="flex items-center gap-1">
-                            <span className="text-pink-600">◉</span> Ilustración profesional
-                        </li>
-                        <li className="flex items-center gap-1">
-                            <span className="text-pink-600">◉</span> Diseño gráfico
-                        </li>
-                        </ul>
-                    </div>
-                    </div>
-                    <p className="mt-2 text-sm italic text-purple-600">
-                    &quot;En cada línea de código veo estructura, en cada trazo digital veo expresión - 
-                    mi objetivo es unir ambos mundos&quot;
-                    </p>
+                  </div>
                 </div>
-                </div>
-            </div>
-            </div>
-        )}
+              </div>
+            )}
 
             {seccion === "tecnologias" && (
-              <div className="space-y-6">
-                <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-lg font-bold">
+              <div className="space-y-4 md:space-y-6 ">
+                <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-base md:text-lg font-bold">
                   Tecnologías de Desarrollo
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 className="font-bold text-blue-800 mb-2">Lenguajes de Programación</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
+                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2 ">Lenguajes de Programación</h3>
                     <ul className="space-y-2">
                       <li className="flex items-center gap-2">
-                        <Image src="/java.png" alt="Java" width={45} height={45} />
-                        <span>Java</span>
+                        <Image src="/java.png" alt="Java" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
+                        <span className="text-sm md:text-base">Java</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Image src="/piton.png" alt="Python" width={45} height={45} />
-                        <span>Python</span>
+                        <Image src="/piton.png" alt="Python" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
+                        <span className="text-sm md:text-base">Python</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Image src="/c-.png" alt="C++" width={45} height={45} />
-                        <span>C++</span>
+                        <Image src="/c-.png" alt="C++" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
+                        <span className="text-sm md:text-base">C++</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Image src="/php.png" alt="PHP" width={isMobile ? 50 : 50} height={isMobile ? 50 : 50} />
+                        <span className="text-sm md:text-base">PHP</span>
                       </li>
                     </ul>
                   </div>
 
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 className="font-bold text-blue-800 mb-2">Bases de Datos</h3>
+                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
+                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">Frameworks</h3>
                     <ul className="space-y-2">
                       <li className="flex items-center gap-2">
-                        <Image src="/postgre.png" alt="PostgreSQL" width={45} height={45} />
-                        <span>PostgreSQL</span>
+                        <Image src="/laravel_icon_135451.png" alt="Laravel" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
+                        <span className="text-sm md:text-base">Laravel</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Image src="/mongodb_original_logo_icon_146424.png" alt="MongoDB" width={45} height={45} />
-                        <span>MongoDB</span>
+                        <Image src="/icons8-flask-128.png" alt="Flask" width={isMobile ? 60 : 60} height={isMobile ? 60 : 60} />
+                        <span className="text-sm md:text-base">Flask</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Image src="/icons8-django-128.png" alt="Django" width={isMobile ? 60 : 60} height={isMobile ? 60 : 60} />
+                        <span className="text-sm md:text-base">Django</span>
                       </li>
                     </ul>
                   </div>
 
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 className="font-bold text-blue-800 mb-2">Desarrollo Web</h3>
+                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
+                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">Bases de Datos</h3>
                     <ul className="space-y-2">
                       <li className="flex items-center gap-2">
-                        <Image src="/html.png" alt="HTML" width={45} height={45} />
-                        <span>HTML</span>
+                        <Image src="/postgre.png" alt="PostgreSQL" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
+                        <span className="text-sm md:text-base">PostgreSQL</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Image src="/css-3.png" alt="CSS" width={45} height={45} />
-                        <span>CSS</span>
+                        <Image src="/mongodb_original_logo_icon_146424.png" alt="MongoDB" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
+                        <span className="text-sm md:text-base">MongoDB</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
+                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">Desarrollo Web</h3>
+                    <ul className="space-y-2">
+                      <li className="flex items-center gap-2">
+                        <Image src="/html.png" alt="HTML" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
+                        <span className="text-sm md:text-base">HTML</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Image src="/css-3.png" alt="CSS" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
+                        <span className="text-sm md:text-base">CSS</span>
                       </li>
                     </ul>
                   </div>
@@ -343,30 +448,34 @@ export default function Home() {
 
             {seccion === "proyectos" && (
               <div>
-                <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-lg font-bold mb-4">
+                <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-base md:text-lg font-bold mb-3 md:mb-4">
                   Proyectos Recientes
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                   {[
                     {
-                      titulo: "Perceptrón Multicapa para Clasificación de Emociones en Texto",
+                      titulo: "Perceptrón Multicapa para Clasificación de Emociones",
                       repo: "Repositorio de GitHub",
                       url: "https://github.com/AntoinetteDizz/Multilayer-Perceptron.git",
+                      imagen: "/emociones-texto.jpg"
                     },
                     {
                       titulo: "Juego de Damas 4x4 con Pygame",
                       repo: "Repositorio de GitHub",
                       url: "https://github.com/AntoinetteDizz/JuegoDamas_IA.git",
+                      imagen: "/damas-pygame.webp"
                     },
                     {
                       titulo: "Agente Inteligente (Q-Learning) para el Juego de Damas",
                       repo: "Repositorio de GitHub",
                       url: "https://github.com/AntoinetteDizz/JuegoDamas_QLearning.git",
+                      imagen: "/q-learning.jpg"
                     },
                     {
                       titulo: "Sistema de Gestión de Supermercado",
                       repo: "Repositorio de GitHub",
                       url: "https://github.com/Callaquenoveo/Proyecto-Cassandra.git",
+                      imagen: "/supermercado.jpg"
                     },
                   ].map((p, i) => (
                     <a
@@ -374,13 +483,38 @@ export default function Home() {
                       href={p.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-white border p-4 rounded shadow-sm hover:shadow-md transition-shadow duration-200 block"
+                      className="bg-white border border-black rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
                     >
-                      <div className="flex items-center gap-3">
-                        <Image src="/github (1).png" alt="icono" width={60} height={60} style={{ opacity: 0.7 }} />
-                        <div>
-                          <p className="font-semibold text-sm">{p.titulo}</p>
-                          <p className="text-[12px] text-gray-500">{p.repo}</p>
+                      {/* Contenedor de imagen con relación de aspecto 16:9 */}
+                      <div className="w-full aspect-video relative overflow-hidden bg-gray-100 border-b border-black">
+                        <Image 
+                          src={p.imagen} 
+                          alt={`Captura de ${p.titulo}`}
+                          fill
+                          className="object-cover hover:scale-105 transition-transform duration-500"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          quality={85}
+                          priority={i < 2} // Prioriza la carga de las primeras imágenes
+                        />
+                      </div>
+                      
+                      {/* Contenido textual */}
+                      <div className="p-3 md:p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-gray-100 p-2 rounded-full flex-shrink-0">
+                            <Image 
+                              src="/github (1).png" 
+                              alt="GitHub" 
+                              width={24} 
+                              height={24}
+                            />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-sm md:text-base leading-tight mb-1 line-clamp-2">
+                              {p.titulo}
+                            </h3>
+                            <p className="text-xs text-gray-500">{p.repo}</p>
+                          </div>
                         </div>
                       </div>
                     </a>
@@ -390,22 +524,24 @@ export default function Home() {
             )}
 
             {seccion === "ilustraciones" && (
-              <div className="space-y-6 relative">
-                <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-lg font-bold">
+              <div className="space-y-4 md:space-y-6 relative">
+                <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-base md:text-lg font-bold">
                   Ilustraciones
                 </h2>
 
                 {/* Galería de miniaturas */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4">
                   {galeria.map((src, index) => (
                     <div
                       key={index}
                       onClick={() => setImagenSeleccionada(src)}
-                      className="w-full h-[180px] cursor-pointer overflow-hidden rounded-md shadow-md hover:shadow-lg transition-all duration-300 group"
+                      className="w-full h-[120px] md:h-[180px] cursor-pointer overflow-hidden rounded-md shadow-md hover:shadow-lg transition-all duration-300 group"
                     >
-                      <img
+                      <Image
                         src={src}
                         alt={`Ilustración ${index + 1}`}
+                        width={200}
+                        height={200}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
@@ -414,127 +550,212 @@ export default function Home() {
 
                 {/* Modal con navegación */}
                 {imagenSeleccionada && (
-                <div
-                  className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
-                  onClick={() => setImagenSeleccionada(null)}
-                >
                   <div
-                    className="relative flex items-center justify-center w-full h-full"
-                    onClick={(e) => e.stopPropagation()}
+                    className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+                    onClick={() => setImagenSeleccionada(null)}
                   >
-                    {/* Botón cerrar */}
-                    <button
-                      onClick={() => setImagenSeleccionada(null)}
-                      className="absolute top-4 right-4 text-white text-2xl font-bold hover:scale-110 transition-transform"
-                      aria-label="Cerrar"
+                    <div
+                      className="relative flex items-center justify-center w-full h-full"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      ✕
-                    </button>
+                      {/* Botón cerrar */}
+                      <button
+                        onClick={() => setImagenSeleccionada(null)}
+                        className="absolute top-2 md:top-4 right-2 md:right-4 text-white text-xl md:text-2xl font-bold hover:scale-110 transition-transform"
+                        aria-label="Cerrar"
+                      >
+                        ✕
+                      </button>
 
-                    {/* Flecha izquierda */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const idx = galeria.indexOf(imagenSeleccionada);
-                        const anterior = galeria[(idx - 1 + galeria.length) % galeria.length];
-                        setImagenSeleccionada(anterior);
-                      }}
-                      className="absolute left-4 text-white text-4xl font-bold hover:scale-110 transition-transform select-none"
-                    >
-                      ←
-                    </button>
+                      {/* Flecha izquierda */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const idx = galeria.indexOf(imagenSeleccionada);
+                          const anterior = galeria[(idx - 1 + galeria.length) % galeria.length];
+                          setImagenSeleccionada(anterior);
+                        }}
+                        className="absolute left-2 md:left-4 text-white text-2xl md:text-4xl font-bold hover:scale-110 transition-transform select-none"
+                      >
+                        ←
+                      </button>
 
-                    {/* Imagen grande */}
-                    <img
-                      src={imagenSeleccionada}
-                      alt="Ilustración ampliada"
-                      className="max-w-[90%] max-h-[90%] rounded shadow-lg border-4 border-white"
-                    />
+                      {/* Imagen grande */}
+                      <img
+                        src={imagenSeleccionada}
+                        alt="Ilustración ampliada"
+                        className="max-w-[90%] max-h-[90%] rounded shadow-lg border-4 border-white"
+                      />
 
-                    {/* Flecha derecha */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const idx = galeria.indexOf(imagenSeleccionada);
-                        const siguiente = galeria[(idx + 1) % galeria.length];
-                        setImagenSeleccionada(siguiente);
-                      }}
-                      className="absolute right-4 text-white text-4xl font-bold hover:scale-110 transition-transform select-none"
-                    >
-                      →
-                    </button>
+                      {/* Flecha derecha */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const idx = galeria.indexOf(imagenSeleccionada);
+                          const siguiente = galeria[(idx + 1) % galeria.length];
+                          setImagenSeleccionada(siguiente);
+                        }}
+                        className="absolute right-2 md:right-4 text-white text-2xl md:text-4xl font-bold hover:scale-110 transition-transform select-none"
+                      >
+                        →
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               </div>
             )}
 
             {seccion === "recursos" && (
-              <div className="space-y-6">
-                <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-lg font-bold">
+              <div className="space-y-4 md:space-y-6">
+                <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-base md:text-lg font-bold">
                   Recursos Creativos
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 className="font-bold text-blue-800 mb-2">Diseño Gráfico</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
+                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">Diseño Gráfico</h3>
                     <ul className="space-y-2">
                       <li className="flex items-center gap-2">
-                        <Image src="/ilustrador.png" alt="ilustrador" width={45} height={45} />
-                        <span>Adobe Illustrator</span>
+                        <Image src="/ilustrador.png" alt="ilustrador" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
+                        <span className="text-sm md:text-base">Adobe Illustrator</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Image src="/photoshop.png" alt="photoshop" width={45} height={45} />
-                        <span>Adobe Photoshop</span>
+                        <Image src="/photoshop.png" alt="photoshop" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
+                        <span className="text-sm md:text-base">Adobe Photoshop</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Image src="/canva.png" alt="Canva" width={55} height={55} />
-                        <span>Canva</span>
+                        <Image src="/canva.png" alt="Canva" width={isMobile ? 40 : 55} height={isMobile ? 40 : 55} />
+                        <span className="text-sm md:text-base">Canva</span>
                       </li>
                     </ul>
                   </div>
 
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 className="font-bold text-blue-800 mb-2">Dibujo Digital</h3>
+                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
+                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">Dibujo Digital</h3>
                     <ul className="space-y-2">
                       <li className="flex items-center gap-2">
-                        <Image src="/ibis.png" alt="Ibis Paint" width={60} height={60} />
-                        <span>Ibis Paint X</span>
+                        <Image src="/ibis.png" alt="Ibis Paint" width={isMobile ? 40 : 60} height={isMobile ? 40 : 60} />
+                        <span className="text-sm md:text-base">Ibis Paint X</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Image src="/sai.png" alt="Paint Tool SAI" width={60} height={60} />
-                        <span>Paint Tool SAI</span>
+                        <Image src="/sai.png" alt="Paint Tool SAI" width={isMobile ? 40 : 60} height={isMobile ? 40 : 60} />
+                        <span className="text-sm md:text-base">Paint Tool SAI</span>
                       </li>
                     </ul>
                   </div>
                 </div>
               </div>
             )}
-
+            
             {seccion === "contacto" && (
-              <div>
-                <h2 className="text-blue-800 text-xl font-bold mb-2">Contacto</h2>
-                <p className="text-gray-600 text-base">
-                  Puedes escribirme a:{" "}
-                  <span className="font-mono text-blue-600">antoniettadizz@email.com</span>
+            <div className="space-y-4 md:space-y-6">
+              <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-base md:text-lg font-bold mb-3 md:mb-4">
+                Contacto
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                {[
+                  {
+                    titulo: "Correo Electrónico",
+                    plataforma: "Gmail",
+                    texto: "Antonietta3012@gmail.com",
+                    icono: "/gmail.png",
+                    esLink: false
+                  },
+                  {
+                    titulo: "Perfil de GitHub",
+                    plataforma: "GitHub",
+                    texto: "AntoinetteDizz",
+                    icono: "/github (2).png",
+                    esLink: false
+                  },
+                  {
+                    titulo: "Perfil Profesional",
+                    plataforma: "LinkedIn",
+                    texto: "Antonietta Palazzo Díaz",
+                    url: "https://ve.linkedin.com/in/antonietta-palazzo-1920332a1?trk=public_profile_samename-profile",
+                    icono: "/linkedin.png",
+                    esLink: true
+                  },
+                  {
+                    titulo: "Cuenta Personal",
+                    plataforma: "Instagram",
+                    texto: "Attdzz",
+                    url: "https://www.instagram.com/attdzz/",
+                    icono: "/instagram (2).png",
+                    esLink: true
+                  }
+                ].map((red, i) => (
+                  red.esLink ? (
+                    <a
+                      key={i}
+                      href={red.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={playClickSound}
+                      className="bg-white border p-3 md:p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 block"
+                    >
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <Image 
+                          src={red.icono} 
+                          alt={red.plataforma} 
+                          width={isMobile ? 40 : 60} 
+                          height={isMobile ? 40 : 60}
+                        />
+                        <div>
+                          <p className="font-semibold text-xs md:text-sm">{red.titulo}</p>
+                          <p className="text-[10px] md:text-[12px] text-gray-500">{red.plataforma}</p>
+                          <p className="text-xs md:text-sm mt-1 italic">{red.texto}</p>
+                        </div>
+                      </div>
+                    </a>
+                  ) : (
+                    <div
+                      key={i}
+                      className="bg-white border p-3 md:p-4 rounded-lg shadow-md block"
+                    >
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <Image 
+                          src={red.icono} 
+                          alt={red.plataforma} 
+                          width={isMobile ? 40 : 60} 
+                          height={isMobile ? 40 : 60}
+                        />
+                        <div>
+                          <p className="font-semibold text-xs md:text-sm">{red.titulo}</p>
+                          <p className="text-[10px] md:text-[12px] text-gray-500">{red.plataforma}</p>
+                          <p className="text-xs md:text-sm mt-1 italic">{red.texto}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+
+              {/* Mensaje adicional opcional */}
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded text-sm md:text-base shadow-md">
+                <p className="text-gray-700">
+                  ¡No dudes en contactarme! Estoy disponible para oportunidades laborales, colaboraciones
+                  en proyectos o simplemente para charlar sobre tecnología y diseño.
                 </p>
               </div>
-            )}
+            </div>
+          )}
           </div>
         </div>
 
         {/* Reproductor de música flotante */}
         {showPlayer && (
-          <div className="fixed bottom-16 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-3 z-50 w-64">
+          <div className={`fixed ${isMobile ? 'bottom-20 left-2 right-2' : 'bottom-16 right-4'} bg-white border border-gray-300 rounded-lg shadow-lg p-3 z-50 ${isMobile ? 'w-auto' : 'w-64'}`}>
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{currentSong.title}</p>
-                  <p className="text-xs text-gray-500 truncate">{currentSong.artist}</p>
+                  <p className="text-xs md:text-sm font-medium truncate">{currentSong.title}</p>
+                  <p className="text-[10px] md:text-xs text-gray-500 truncate">{currentSong.artist}</p>
                 </div>
                 <button 
                   onClick={togglePlayPause}
-                  className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-700 text-sm"
+                  className="bg-blue-600 text-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center hover:bg-blue-700 text-xs md:text-sm"
                 >
                   {isPlaying ? '❚❚' : '▶'}
                 </button>
@@ -548,11 +769,11 @@ export default function Home() {
                 step="0.1"
                 value={progress}
                 onChange={handleProgressChange}
-                className="w-full h-1.5 rounded-full appearance-none bg-gray-200 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600"
+                className="w-full h-1.5 md:h-2 rounded-full appearance-none bg-gray-200 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:w-2 md:[&::-webkit-slider-thumb]:h-3 md:[&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600"
               />
               
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Volumen:</span>
+                <span className="text-[10px] md:text-xs text-gray-500">Volumen:</span>
                 <input
                   type="range"
                   min="0"
@@ -560,19 +781,19 @@ export default function Home() {
                   step="0.01"
                   value={volume}
                   onChange={handleVolumeChange}
-                  className="w-full h-1.5 rounded-full appearance-none bg-gray-200 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600"
+                  className="w-full h-1.5 md:h-2 rounded-full appearance-none bg-gray-200 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:w-2 md:[&::-webkit-slider-thumb]:h-3 md:[&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600"
                 />
               </div>
               
               {/* Selector de canciones */}
-              <div className="text-xs">
+              <div className="text-[10px] md:text-xs">
                 <span className="text-gray-500">Canciones:</span>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {songs.map((song, index) => (
                     <button
                       key={index}
                       onClick={() => changeSong(index)}
-                      className={`px-2 py-1 rounded text-xs ${currentSongIndex === index ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+                      className={`px-1.5 md:px-2 py-0.5 md:py-1 rounded text-[10px] md:text-xs ${currentSongIndex === index ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
                     >
                       {index + 1}
                     </button>
@@ -583,33 +804,94 @@ export default function Home() {
           </div>
         )}
 
-        {/* Footer tipo barra de tareas */}
-        <div className="bg-gray-300 border-t border-gray-500 px-4 py-2 flex justify-between items-center text-sm">
-          <div className="flex items-center gap-2">
+        {/* Footer tipo barra de tareas - Versión responsiva */}
+        <div className="bg-gray-300 border-t border-gray-500 px-2 md:px-4 py-1 flex justify-between items-center text-xs sm:text-sm">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto whitespace-nowrap">
+            {/* Botón Inicio - Versión responsiva */}
             <button
-              onClick={() => setSeccion("presentacion")}
-              className="flex items-center gap-2 px-3 py-1 bg-gray-100 border border-gray-500 rounded-sm hover:bg-white"
+              onClick={() => {
+                playNavSound();
+                setSeccion("presentacion");
+              }}
+              className="flex items-center gap-1 px-2 py-1 bg-gray-100 border border-gray-500 rounded-sm hover:bg-white min-w-fit"
             >
-              <Image src="/323.png" alt="Inicio" width={18} height={18} />
-              <span className="font-semibold">Inicio</span>
+              <Image 
+                src="/323.png" 
+                alt="Inicio" 
+                width={14} 
+                height={14} 
+                className="w-3 h-3 sm:w-4 sm:h-4" 
+              />
+              <span className="font-semibold hidden md:inline">Inicio</span>
             </button>
-            <div className="flex items-center gap-2 px-3 py-1 bg-gray-200 border border-gray-500 rounded-sm">
-              <Image src="/199.png" alt="Sección activa" width={16} height={16} />
-              <span className="capitalize">{seccion}</span>
+
+            {/* Sección activa - Versión responsiva */}
+            <div className="flex items-center gap-1 px-2 py-1 bg-gray-200 border border-gray-500 rounded-sm min-w-fit">
+              <Image 
+                src="/199.png" 
+                alt="Sección activa" 
+                width={12} 
+                height={12} 
+                className="w-3 h-3 sm:w-4 sm:h-4" 
+              />
+              <span className="capitalize truncate max-w-[80px] sm:max-w-none">
+                {seccion}
+              </span>
             </div>
 
-            {/* Botón para mostrar/ocultar el reproductor */}
+            {/* Botón Reproductor - Versión responsiva */}
             <button 
-              onClick={() => setShowPlayer(!showPlayer)}
-              className="flex items-center gap-1 px-2 py-1 bg-gray-100 border border-gray-500 rounded-sm hover:bg-white"
+              onClick={() => {
+                playClickSound();
+                setShowPlayer(!showPlayer);
+              }}
+              className="flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-gray-100 border border-gray-500 rounded-sm hover:bg-white min-w-fit"
             >
-              <Image src="/307.png" alt="Reproductor" width={16} height={16} />
-              <span>{isPlaying ? 'Reproduciendo...' : 'Reproductor'}</span>
+              <Image 
+                src="/307.png" 
+                alt="Reproductor" 
+                width={12} 
+                height={12} 
+                className="w-3 h-3 sm:w-4 sm:h-4" 
+              />
+              <span className="hidden sm:inline">
+                {isPlaying ? 'Reproduciendo...' : 'Reproductor'}
+              </span>
+              <span className="sm:hidden">
+                {isPlaying ? '...' : 'Play'}
+              </span>
             </button>
           </div>
-          <div className="flex items-center gap-2 pr-2 text-gray-800">
-            <Image src="/192.png" alt="Lupa" width={14} height={14} />
-            <span>{new Date().toLocaleDateString("es-ES")}</span>
+
+          {/* Fecha y Hora - Versión responsiva */}
+          <div className="flex items-center gap-1 pl-2 text-gray-800 min-w-fit">
+
+            <Image 
+              src="/1083.png" 
+              alt="pc" 
+              width={30}  
+              height={30}
+              className="w-7 h-7 sm:w-8 sm:h-8" 
+            />
+            
+            <div className="flex flex-col leading-tight">
+              {/* Hora en formato 12h con AM/PM */}
+              <span className="text-xs sm:text-sm font-medium">
+                {new Date().toLocaleTimeString("es-ES", {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                })}
+              </span>
+              {/* Fecha en formato dd/mm/yyyy */}
+              <span className="text-[10px] sm:text-xs">
+                {new Date().toLocaleDateString("es-ES", {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric'
+                }).replace(/\//g, '/')}
+              </span>
+            </div>
           </div>
         </div>
       </div>
