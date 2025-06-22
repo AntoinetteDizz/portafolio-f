@@ -229,7 +229,7 @@ export default function Home() {
 
   return (
     <div
-      className="min-h-screen bg-cover bg-center flex items-center justify-center p-2 md:p-4"
+      className="min-h-screen bg-cover bg-center flex items-center justify-center p-2 md:p-4 portafolio-container"
       style={{ backgroundImage: "url('/941898.jpg')" }}
     >
       {/* Elementos de audio */}
@@ -243,7 +243,7 @@ export default function Home() {
       <audio ref={clickSoundRef} src="/sonidos/Windows XP Start.wav" preload="auto" hidden />
       <audio ref={navSoundRef} src="/sonidos/Windows XP Start.wav" preload="auto" hidden />
 
-      <div className="bg-white border border-gray-600 w-full max-w-[1000px] h-[90vh] md:h-[600px] rounded-md shadow-xl flex flex-col mx-2">
+      <div className="bg-white border border-gray-600 w-full max-w-[1000px] h-[90vh] md:h-[600px] rounded-md shadow-xl flex flex-col mx-2 text-black">
         {/* Encabezado tipo ventana XP */}
         <div className="bg-blue-800 text-white px-4 md:px-6 py-2 text-lg font-bold flex justify-between items-center">
           <span>Portafolio</span>
@@ -264,7 +264,7 @@ export default function Home() {
                 playNavSound();
                 setMenuAbierto(!menuAbierto);
               }}
-              className="md:hidden bg-gray-200 border-b border-gray-400 p-2 flex items-center justify-center"
+              className="md:hidden bg-gray-200 border-b border-gray-400 p-2 flex items-center justify-center text-black"
             >
               <Image 
                 src="/20.png" 
@@ -278,7 +278,7 @@ export default function Home() {
           )}
 
           {/* Barra lateral fija - Responsive */}
-          <div className={`${isMobile ? (menuAbierto ? "block" : "hidden") : "block"} bg-gray-200 border-r border-gray-400 w-full md:w-[200px] py-4 md:py-6 px-2 md:px-3 space-y-2 md:space-y-4 text-base md:text-lg font-bold`}>
+          <div className={`${isMobile ? (menuAbierto ? "block" : "hidden") : "block"} bg-gray-200 border-r border-gray-400 w-full md:w-[200px] py-4 md:py-6 px-2 md:px-3 space-y-2 md:space-y-4 text-base md:text-lg font-bold text-black`}>
             {[
               { id: "presentacion", label: "Presentación", icon: "/323.png" },
               { id: "tecnologias", label: "Tecnologías", icon: "/139_1.png" },
@@ -308,7 +308,7 @@ export default function Home() {
           </div>
 
           {/* Área de contenido con scroll */}
-          <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-6 text-sm md:text-base bg-white">
+          <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-6 text-sm md:text-base bg-white text-black">
             {seccion === "presentacion" && (
               <div className="border border-gray-400 rounded-md bg-gradient-to-br from-white to-[#f0f8ff] shadow-[inset_0_0_3px_#ccc] p-4 md:p-6 space-y-4 md:space-y-6">
                 {/* Título superior */}
@@ -785,7 +785,7 @@ export default function Home() {
 
         {/* Reproductor de música flotante */}
         {showPlayer && (
-          <div className={`fixed ${isMobile ? 'bottom-20 left-2 right-2' : 'bottom-16 right-4'} bg-white border border-gray-300 rounded-lg shadow-lg p-3 z-50 ${isMobile ? 'w-auto' : 'w-64'}`}>
+          <div className={`fixed ${isMobile ? 'bottom-20 left-2 right-2' : 'bottom-16 right-4'} bg-white border border-gray-300 rounded-lg shadow-lg p-3 z-50 ${isMobile ? 'w-auto' : 'w-64'} text-black`}>
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
@@ -844,7 +844,7 @@ export default function Home() {
         )}
 
         {/* Footer tipo barra de tareas - Versión responsiva */}
-        <div className="bg-gray-300 border-t border-gray-500 px-2 md:px-4 py-1 flex justify-between items-center text-xs sm:text-sm">
+        <div className="bg-gray-300 border-t border-gray-500 px-2 md:px-4 py-1 flex justify-between items-center text-xs sm:text-sm text-black">
           <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto whitespace-nowrap">
             {/* Botón Inicio - Versión responsiva */}
             <button
