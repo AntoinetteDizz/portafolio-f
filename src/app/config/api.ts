@@ -1,6 +1,6 @@
 // Configuración de la API del backend
 // Cambia esta URL por la URL real de tu backend desplegado en Render
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://tu-backend-url-en-render.onrender.com';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://portafolio-b.onrender.com';
 
 // Endpoints
 export const ENDPOINTS = {
@@ -10,7 +10,7 @@ export const ENDPOINTS = {
 
 // Función para validar que la URL del backend esté configurada
 export const validateApiConfig = () => {
-  if (API_BASE_URL === 'https://tu-backend-url-en-render.onrender.com') {
+  if (API_BASE_URL === 'https://portafolio-b.onrender.com') {
     console.warn('⚠️  API_BASE_URL no está configurada. Por favor, configura NEXT_PUBLIC_API_URL en tu archivo .env.local');
     return false;
   }
