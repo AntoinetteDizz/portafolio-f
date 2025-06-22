@@ -1,6 +1,10 @@
 // Configuración de la API del backend
-// Cambia esta URL por la URL real de tu backend desplegado en Render
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://portafolio-b.onrender.com';
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+// Usa la URL de Render en producción, y una URL local para desarrollo
+export const API_BASE_URL = IS_PROD 
+  ? process.env.NEXT_PUBLIC_API_URL 
+  : 'http://127.0.0.1:8000';
 
 // Endpoints
 export const ENDPOINTS = {
@@ -10,9 +14,18 @@ export const ENDPOINTS = {
 
 // Función para validar que la URL del backend esté configurada
 export const validateApiConfig = () => {
-  if (API_BASE_URL === 'https://portafolio-b.onrender.com') {
-    console.warn('⚠️  API_BASE_URL no está configurada. Por favor, configura NEXT_PUBLIC_API_URL en tu archivo .env.local');
+  // En producción, asegúrate de que la variable de entorno esté definida
+  if (IS_PROD && !process.env.NEXT_PUBLIC_API_URL) {
+    console.error('ERROR: NEXT_PUBLIC_API_URL no está definida en el entorno de producción.');
     return false;
   }
+  
+  // En desarrollo, podemos permitir que no esté definida y usar el valor por defecto
+  if (!IS_PROD) {
+    if (API_BASE_URL === 'http://127.0.0.1:8000') {
+      console.log('Usando API local en http://127.0.0.1:8000');
+    }
+  }
+
   return true;
 }; 
