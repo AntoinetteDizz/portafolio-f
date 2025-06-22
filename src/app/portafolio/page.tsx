@@ -16,9 +16,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
 
   // Estados para datos dinámicos del backend
-  const [tecnologias, setTecnologias] = useState<Tecnologia[]>([]);
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
-  const [tecnologiasAgrupadas, setTecnologiasAgrupadas] = useState<TecnologiaCategoria[]>([]);
   const [tecnologiasDesarrollo, setTecnologiasDesarrollo] = useState<TecnologiaCategoria[]>([]);
   const [tecnologiasRecursos, setTecnologiasRecursos] = useState<TecnologiaCategoria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,12 +196,7 @@ export default function Home() {
           fetchProyectos()
         ]);
         
-        setTecnologias(tecnologiasData);
         setProyectos(proyectosData);
-        
-        // Agrupar tecnologías por categoría (todas)
-        const agrupadas = groupTecnologiasByCategoria(tecnologiasData);
-        setTecnologiasAgrupadas(agrupadas);
         
         // Agrupar tecnologías para la sección de desarrollo
         const categoriasDesarrollo = [
@@ -614,10 +607,12 @@ export default function Home() {
                       </button>
 
                       {/* Imagen grande */}
-                      <img
+                      <Image
                         src={imagenSeleccionada}
                         alt="Ilustración ampliada"
-                        className="max-w-[90%] max-h-[90%] rounded shadow-lg border-4 border-white"
+                        width={1920}
+                        height={1080}
+                        className="max-w-[90%] max-h-[90%] w-auto h-auto rounded shadow-lg border-4 border-white"
                       />
 
                       {/* Flecha derecha */}
