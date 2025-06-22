@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { fetchTecnologias, fetchProyectos, groupTecnologiasByCategoria, groupTecnologiasByCategoriaFiltered } from "../services/api";
+import { Tecnologia, Proyecto, TecnologiaCategoria } from "../types";
 
 export default function Home() {
   const [seccion, setSeccion] = useState("presentacion");
@@ -12,6 +14,15 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Estados para datos dinámicos del backend
+  const [tecnologias, setTecnologias] = useState<Tecnologia[]>([]);
+  const [proyectos, setProyectos] = useState<Proyecto[]>([]);
+  const [tecnologiasAgrupadas, setTecnologiasAgrupadas] = useState<TecnologiaCategoria[]>([]);
+  const [tecnologiasDesarrollo, setTecnologiasDesarrollo] = useState<TecnologiaCategoria[]>([]);
+  const [tecnologiasRecursos, setTecnologiasRecursos] = useState<TecnologiaCategoria[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Verificar si es móvil al cargar y en redimensiones
   useEffect(() => {
@@ -173,6 +184,55 @@ export default function Home() {
 
   // Alternar menú en móvil
   const [menuAbierto, setMenuAbierto] = useState(false);
+
+  // Cargar datos del backend
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Cargar tecnologías y proyectos en paralelo
+        const [tecnologiasData, proyectosData] = await Promise.all([
+          fetchTecnologias(),
+          fetchProyectos()
+        ]);
+        
+        setTecnologias(tecnologiasData);
+        setProyectos(proyectosData);
+        
+        // Agrupar tecnologías por categoría (todas)
+        const agrupadas = groupTecnologiasByCategoria(tecnologiasData);
+        setTecnologiasAgrupadas(agrupadas);
+        
+        // Agrupar tecnologías para la sección de desarrollo
+        const categoriasDesarrollo = [
+          "Tecnologías de Desarrollo",
+          "Frameworks", 
+          "Bases de Datos",
+          "Desarrollo Web"
+        ];
+        const tecnologiasDesarrolloAgrupadas = groupTecnologiasByCategoriaFiltered(tecnologiasData, categoriasDesarrollo);
+        setTecnologiasDesarrollo(tecnologiasDesarrolloAgrupadas);
+        
+        // Agrupar tecnologías para la sección de recursos
+        const categoriasRecursos = [
+          "Diseño Gráfico",
+          "Dibujo Digital"
+        ];
+        const tecnologiasRecursosAgrupadas = groupTecnologiasByCategoriaFiltered(tecnologiasData, categoriasRecursos);
+        setTecnologiasRecursos(tecnologiasRecursosAgrupadas);
+        
+      } catch (err) {
+        console.error('Error cargando datos:', err);
+        setError('Error al cargar los datos. Por favor, intenta de nuevo.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   return (
     <div
@@ -369,80 +429,55 @@ export default function Home() {
             )}
 
             {seccion === "tecnologias" && (
-              <div className="space-y-4 md:space-y-6 ">
+              <div className="space-y-4 md:space-y-6">
                 <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-base md:text-lg font-bold">
                   Tecnologías de Desarrollo
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
-                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2 ">Lenguajes de Programación</h3>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
-                        <Image src="/java.png" alt="Java" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
-                        <span className="text-sm md:text-base">Java</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Image src="/piton.png" alt="Python" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
-                        <span className="text-sm md:text-base">Python</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Image src="/c-.png" alt="C++" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
-                        <span className="text-sm md:text-base">C++</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Image src="/php.png" alt="PHP" width={isMobile ? 50 : 50} height={isMobile ? 50 : 50} />
-                        <span className="text-sm md:text-base">PHP</span>
-                      </li>
-                    </ul>
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-800"></div>
+                    <span className="ml-2 text-gray-600">Cargando tecnologías...</span>
                   </div>
-
-                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
-                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">Frameworks</h3>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
-                        <Image src="/laravel_icon_135451.png" alt="Laravel" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
-                        <span className="text-sm md:text-base">Laravel</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Image src="/icons8-flask-128.png" alt="Flask" width={isMobile ? 60 : 60} height={isMobile ? 60 : 60} />
-                        <span className="text-sm md:text-base">Flask</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Image src="/icons8-django-128.png" alt="Django" width={isMobile ? 60 : 60} height={isMobile ? 60 : 60} />
-                        <span className="text-sm md:text-base">Django</span>
-                      </li>
-                    </ul>
+                ) : error ? (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                    <p className="text-red-600">{error}</p>
+                    <button 
+                      onClick={() => window.location.reload()} 
+                      className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Reintentar
+                    </button>
                   </div>
-
-                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
-                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">Bases de Datos</h3>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
-                        <Image src="/postgre.png" alt="PostgreSQL" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
-                        <span className="text-sm md:text-base">PostgreSQL</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Image src="/mongodb_original_logo_icon_146424.png" alt="MongoDB" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
-                        <span className="text-sm md:text-base">MongoDB</span>
-                      </li>
-                    </ul>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    {tecnologiasDesarrollo.map((categoria, index) => (
+                      <div key={index} className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
+                        <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">
+                          {categoria.categoria}
+                        </h3>
+                        <ul className="space-y-2">
+                          {categoria.tecnologias.map((tecnologia) => (
+                            <li key={tecnologia.id} className="flex items-center gap-2">
+                              <Image 
+                                src={tecnologia.imagen} 
+                                alt={tecnologia.nombre} 
+                                width={isMobile ? 30 : 45} 
+                                height={isMobile ? 30 : 45}
+                                onError={(e) => {
+                                  // Fallback a un ícono genérico si la imagen falla
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = "/file.svg";
+                                }}
+                              />
+                              <span className="text-sm md:text-base">{tecnologia.nombre}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
-
-                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
-                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">Desarrollo Web</h3>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
-                        <Image src="/html.png" alt="HTML" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
-                        <span className="text-sm md:text-base">HTML</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Image src="/css-3.png" alt="CSS" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
-                        <span className="text-sm md:text-base">CSS</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -451,75 +486,73 @@ export default function Home() {
                 <h2 className="bg-blue-800 text-white px-3 py-2 rounded text-base md:text-lg font-bold mb-3 md:mb-4">
                   Proyectos Recientes
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                  {[
-                    {
-                      titulo: "Perceptrón Multicapa para Clasificación de Emociones",
-                      repo: "Repositorio de GitHub",
-                      url: "https://github.com/AntoinetteDizz/Multilayer-Perceptron.git",
-                      imagen: "/emociones-texto.jpg"
-                    },
-                    {
-                      titulo: "Juego de Damas 4x4 con Pygame",
-                      repo: "Repositorio de GitHub",
-                      url: "https://github.com/AntoinetteDizz/JuegoDamas_IA.git",
-                      imagen: "/damas-pygame.webp"
-                    },
-                    {
-                      titulo: "Agente Inteligente (Q-Learning) para el Juego de Damas",
-                      repo: "Repositorio de GitHub",
-                      url: "https://github.com/AntoinetteDizz/JuegoDamas_QLearning.git",
-                      imagen: "/q-learning.jpg"
-                    },
-                    {
-                      titulo: "Sistema de Gestión de Supermercado",
-                      repo: "Repositorio de GitHub",
-                      url: "https://github.com/Callaquenoveo/Proyecto-Cassandra.git",
-                      imagen: "/supermercado.jpg"
-                    },
-                  ].map((p, i) => (
-                    <a
-                      key={i}
-                      href={p.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-white border border-black rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+                
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-800"></div>
+                    <span className="ml-2 text-gray-600">Cargando proyectos...</span>
+                  </div>
+                ) : error ? (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                    <p className="text-red-600">{error}</p>
+                    <button 
+                      onClick={() => window.location.reload()} 
+                      className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                     >
-                      {/* Contenedor de imagen con relación de aspecto 16:9 */}
-                      <div className="w-full aspect-video relative overflow-hidden bg-gray-100 border-b border-black">
-                        <Image 
-                          src={p.imagen} 
-                          alt={`Captura de ${p.titulo}`}
-                          fill
-                          className="object-cover hover:scale-105 transition-transform duration-500"
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                          quality={85}
-                          priority={i < 2} // Prioriza la carga de las primeras imágenes
-                        />
-                      </div>
-                      
-                      {/* Contenido textual */}
-                      <div className="p-3 md:p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="bg-gray-100 p-2 rounded-full flex-shrink-0">
-                            <Image 
-                              src="/github (1).png" 
-                              alt="GitHub" 
-                              width={24} 
-                              height={24}
-                            />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-sm md:text-base leading-tight mb-1 line-clamp-2">
-                              {p.titulo}
-                            </h3>
-                            <p className="text-xs text-gray-500">{p.repo}</p>
+                      Reintentar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                    {proyectos.map((proyecto, i) => (
+                      <a
+                        key={proyecto.id}
+                        href={proyecto.urlRepo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-white border border-black rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+                      >
+                        {/* Contenedor de imagen con relación de aspecto 16:9 */}
+                        <div className="w-full aspect-video relative overflow-hidden bg-gray-100 border-b border-black">
+                          <Image 
+                            src={proyecto.imagen} 
+                            alt={`Captura de ${proyecto.titulo}`}
+                            fill
+                            className="object-cover hover:scale-105 transition-transform duration-500"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                            quality={85}
+                            priority={i < 2} // Prioriza la carga de las primeras imágenes
+                            onError={(e) => {
+                              // Fallback a una imagen genérica si la imagen falla
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/file.svg";
+                            }}
+                          />
+                        </div>
+                        
+                        {/* Contenido textual */}
+                        <div className="p-3 md:p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="bg-gray-100 p-2 rounded-full flex-shrink-0">
+                              <Image 
+                                src="/github (1).png" 
+                                alt="GitHub" 
+                                width={24} 
+                                height={24}
+                              />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-sm md:text-base leading-tight mb-1 line-clamp-2">
+                                {proyecto.titulo}
+                              </h3>
+                              <p className="text-xs text-gray-500">Repositorio de GitHub</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </a>
-                  ))}
-                </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -611,39 +644,50 @@ export default function Home() {
                   Recursos Creativos
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
-                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">Diseño Gráfico</h3>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
-                        <Image src="/ilustrador.png" alt="ilustrador" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
-                        <span className="text-sm md:text-base">Adobe Illustrator</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Image src="/photoshop.png" alt="photoshop" width={isMobile ? 30 : 45} height={isMobile ? 30 : 45} />
-                        <span className="text-sm md:text-base">Adobe Photoshop</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Image src="/canva.png" alt="Canva" width={isMobile ? 40 : 55} height={isMobile ? 40 : 55} />
-                        <span className="text-sm md:text-base">Canva</span>
-                      </li>
-                    </ul>
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-800"></div>
+                    <span className="ml-2 text-gray-600">Cargando recursos...</span>
                   </div>
-
-                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
-                    <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">Dibujo Digital</h3>
-                    <ul className="space-y-2">
-                      <li className="flex items-center gap-2">
-                        <Image src="/ibis.png" alt="Ibis Paint" width={isMobile ? 40 : 60} height={isMobile ? 40 : 60} />
-                        <span className="text-sm md:text-base">Ibis Paint X</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Image src="/sai.png" alt="Paint Tool SAI" width={isMobile ? 40 : 60} height={isMobile ? 40 : 60} />
-                        <span className="text-sm md:text-base">Paint Tool SAI</span>
-                      </li>
-                    </ul>
+                ) : error ? (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                    <p className="text-red-600">{error}</p>
+                    <button 
+                      onClick={() => window.location.reload()} 
+                      className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Reintentar
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    {tecnologiasRecursos.map((categoria, index) => (
+                      <div key={index} className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 shadow-md">
+                        <h3 className="font-bold text-blue-800 text-sm md:text-base mb-2">
+                          {categoria.categoria}
+                        </h3>
+                        <ul className="space-y-2">
+                          {categoria.tecnologias.map((tecnologia) => (
+                            <li key={tecnologia.id} className="flex items-center gap-2">
+                              <Image 
+                                src={tecnologia.imagen} 
+                                alt={tecnologia.nombre} 
+                                width={isMobile ? 30 : 45} 
+                                height={isMobile ? 30 : 45}
+                                onError={(e) => {
+                                  // Fallback a un ícono genérico si la imagen falla
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = "/file.svg";
+                                }}
+                              />
+                              <span className="text-sm md:text-base">{tecnologia.nombre}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             
