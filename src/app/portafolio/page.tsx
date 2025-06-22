@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { fetchTecnologias, fetchProyectos, groupTecnologiasByCategoria, groupTecnologiasByCategoriaFiltered } from "../services/api";
-import { Tecnologia, Proyecto, TecnologiaCategoria } from "../types";
+import { fetchTecnologias, fetchProyectos, groupTecnologiasByCategoriaFiltered } from "../services/api";
+import { Proyecto, TecnologiaCategoria } from "../types";
 
 export default function Home() {
   const [seccion, setSeccion] = useState("presentacion");
